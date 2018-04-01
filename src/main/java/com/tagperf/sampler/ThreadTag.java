@@ -18,9 +18,9 @@ public class ThreadTag implements ThreadTagMBean {
 
     }
 
-    public ThreadTagState [] getAllThreadTagState() {
+    public TagExecRecordsPerThread [] getAllThreadTagExecRecords() {
         //System.out.println ("Getting thread state.");
-        return ThreadTagProvider.instance().getAllThreadTagState();
+        return ThreadTagProvider.instance().getAllThreadTagExecRecords();
     }
 
     public static void registerMBean() throws Exception{

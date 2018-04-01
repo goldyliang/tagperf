@@ -21,10 +21,18 @@ import java.util.Random;
 public class ThreadTagProvider {
 
     // A String based tag held by each thread locally
-    private ThreadLocal<String> currentTag;
+    //private ThreadLocal<String> currentTag;
+
+    private ThreadLocal<TagExecRecordsPerThread> tagExecRecords;
 
     private ThreadTagProvider() {
-        currentTag = new ThreadLocal<String>();
+        //currentTag = new ThreadLocal<String>();
+        tagExecRecords = new ThreadLocal<TagExecRecordsPerThread>() {
+            @Override
+            public TagExecRecordsPerThread initialValue() {
+                return new TagExecRecordsPerThread(Thread.currentThread().getId());
+            }
+        };
     }
 
     private static Field threadLocalsField;
@@ -54,25 +62,30 @@ public class ThreadTagProvider {
         return singletonInstance;
     }
 
+    /*private TagExecRecord getTagExecRecord (String tag) {
+        TagExecRecordsPerThread execRecords = tagExecRecords.get();
+        return execRecords.getTagExecRecord(tag);
+    }*/
+
     public void setTag (String tag) {
-        currentTag.set(tag);
+        tagExecRecords.get().addTagEnter(tag);
     }
 
     public void unsetTag () {
-        currentTag.set(null);
+         tagExecRecords.get().addTagExit();
     }
 
-    private String getTagOfThread (Thread thread) {
+    private TagExecRecordsPerThread getTagExecRecordOfThread (Thread thread) {
         try {
             Object map = threadLocalsField.get(thread);
             if (map == null) {
                 return null;
             }
-            WeakReference entry = (WeakReference) getEntryMethod.invoke(map, currentTag);
+            WeakReference entry = (WeakReference) getEntryMethod.invoke(map, tagExecRecords);
             if (entry == null) {
                 return null;
             }
-            return (String)(valueField.get(entry));
+            return (TagExecRecordsPerThread)(valueField.get(entry));
         } catch (IllegalAccessException e) {
             return null;
         } catch (InvocationTargetException e) {
@@ -106,22 +119,21 @@ public class ThreadTagProvider {
         return Arrays.copyOf( threads, n );
     }
 
-    public ThreadTagState [] getAllThreadTagState () {
+    public TagExecRecordsPerThread [] getAllThreadTagExecRecords () {
 
         Thread[] allThreads = getAllThreads();
 
-        ThreadTagState [] states = new ThreadTagState [allThreads.length];
+        TagExecRecordsPerThread [] recordsPerThreads = new TagExecRecordsPerThread [allThreads.length];
 
         for (int i = 0; i < allThreads.length; i++) {
             Thread thread = allThreads[i];
-            String name = thread.getName();
-            Thread.State state = thread.getState();
-            String tag = getTagOfThread(thread);
-            long id = thread.getId();
-
-            states[i] = new ThreadTagState(id, tag, state);
+            TagExecRecordsPerThread tagExecRecordThread = getTagExecRecordOfThread(thread);
+            if (tagExecRecordThread != null) { // Ignore system threads
+                tagExecRecordThread.addTagSample();
+                recordsPerThreads[i] = tagExecRecordThread.deepCloneAndReset();
+            }
         }
-        return states;
+        return recordsPerThreads;
     }
 
     private static long readInt (BufferedReader br) throws IOException {
@@ -195,7 +207,7 @@ public class ThreadTagProvider {
 
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
-        while (true) {
+        /*while (true) {
 
             System.out.println("Current dummy loop counts:");
             for (int i = 0; i < ratios.length; i++) {
@@ -236,19 +248,29 @@ public class ThreadTagProvider {
             } else if (input.equals("3")) {
                 enableTag[0] = !enableTag[0];
             }
-        }
+        }*/
 
-        /*for (int i = 0; i < 60; i++) {
-            Map<Long, ThreadTagState> states = ThreadTagProvider.instance().getAllThreadTagState();
-            for (Long threadId : states.keySet()) {
-                System.out.println("ID:" + threadId);
-                System.out.println("State:" + states.get(threadId).toString());
+        for (int i = 0; i < 60; i++) {
+            TagExecRecordsPerThread[] recordsPerThreads = ThreadTagProvider.instance()
+                    .getAllThreadTagExecRecords();
+            for (TagExecRecordsPerThread recordOfThread : recordsPerThreads) {
+                if (recordOfThread != null) {
+                    System.out.println("ID:" + recordOfThread.getThreadId());
+                    for (String tag : recordOfThread.getTagSet()) {
+                        System.out.println("   Tag          :" + tag);
+                        TagExecRecord record = recordOfThread.getTagExecRecord(tag);
+                        System.out.println("   CurStartTime :" + record.getCurStartedThreadTime());
+                        System.out.println("   CpuUsed      :" + record.getCpuTimeUsed());
+                        System.out.println("   TagEntered   :" + record.getTagEnteredCnt());
+                        System.out.println("   TagExit      :" + record.getTagExitCnt());
+                    }
+                }
             }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 //
             }
-        }*/
+        }
     }
 }

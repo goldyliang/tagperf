@@ -7,5 +7,5 @@ public interface ThreadTagMBean {
     public void enableTag();
     public void disableTag();
 
-    public ThreadTagState[] getAllThreadTagState();
+    public TagExecRecordsPerThread [] getAllThreadTagExecRecords();
 }
