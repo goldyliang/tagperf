@@ -6,7 +6,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
 /**
- * Created by elnggng on 4/1/18.
+ * Created by goldyliang on 4/1/18.
  */
 public class TagExecRecord implements Serializable, Cloneable {
     String tag;
@@ -14,8 +14,8 @@ public class TagExecRecord implements Serializable, Cloneable {
     private long curStartedThreadTime; // the thread start time of the current onging thread which is not collected yet
                                           // (valid when curTagOngoing = true)
     private long cpuTimeUsed;
-    private transient long cpuTimeUsedEver_Prev;
-    private long cpuTimeUsedEver;
+    //private transient long cpuTimeUsedEver_Prev;
+    //private long cpuTimeUsedEver;
     private long tagEnteredCnt;
     private long tagExitCnt;
 
@@ -25,7 +25,7 @@ public class TagExecRecord implements Serializable, Cloneable {
         this.tag = tag;
         curTagOngoing = false;
         cpuTimeUsed = 0;
-        cpuTimeUsedEver_Prev = cpuTimeUsedEver = 0;
+        //cpuTimeUsedEver_Prev = cpuTimeUsedEver = 0;
         tagEnteredCnt = tagExitCnt = 0;
 
         threadMBean = ManagementFactory.getThreadMXBean();
@@ -37,7 +37,7 @@ public class TagExecRecord implements Serializable, Cloneable {
         newRecord.curTagOngoing = curTagOngoing;
         newRecord.curStartedThreadTime = curStartedThreadTime;
         newRecord.cpuTimeUsed = cpuTimeUsed;
-        newRecord.cpuTimeUsedEver = cpuTimeUsedEver;
+        //newRecord.cpuTimeUsedEver = cpuTimeUsedEver;
         newRecord.tagEnteredCnt = tagEnteredCnt;
         newRecord.tagExitCnt = tagExitCnt;
         return newRecord;
@@ -47,9 +47,9 @@ public class TagExecRecord implements Serializable, Cloneable {
         return cpuTimeUsed;
     }
 
-    public long getCpuTimeUsedEver () {
-        return cpuTimeUsedEver;
-    }
+    //public long getCpuTimeUsedEver () {
+    //    return cpuTimeUsedEver;
+    //}
 
     public long getTagEnteredCnt() {
         return tagEnteredCnt;
@@ -83,9 +83,9 @@ public class TagExecRecord implements Serializable, Cloneable {
 
     public void addTagExit () {
         if (curTagOngoing) {
-            cpuTimeUsedEver += (getCurrentThreadCpuTime() - curStartedThreadTime);
-            cpuTimeUsed = cpuTimeUsedEver - cpuTimeUsedEver_Prev;
-            cpuTimeUsedEver_Prev = cpuTimeUsedEver;
+            cpuTimeUsed += (getCurrentThreadCpuTime() - curStartedThreadTime);
+            //cpuTimeUsed = cpuTimeUsedEver - cpuTimeUsedEver_Prev;
+            //cpuTimeUsedEver_Prev = cpuTimeUsedEver;
             tagExitCnt++;
             curTagOngoing = false;
         } else {
@@ -99,9 +99,7 @@ public class TagExecRecord implements Serializable, Cloneable {
         if (curTagOngoing) {
             long cpuTime = getThreadCpuTime(thread);
 
-            cpuTimeUsedEver += cpuTime - curStartedThreadTime;
-            cpuTimeUsed = cpuTimeUsedEver - cpuTimeUsedEver_Prev;
-            cpuTimeUsedEver_Prev = cpuTimeUsedEver;
+            cpuTimeUsed += cpuTime - curStartedThreadTime;
 
             curStartedThreadTime = cpuTime;
         } else {

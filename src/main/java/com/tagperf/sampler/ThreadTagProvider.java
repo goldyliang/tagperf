@@ -87,8 +87,10 @@ public class ThreadTagProvider {
             }
             return (TagExecRecordsPerThread)(valueField.get(entry));
         } catch (IllegalAccessException e) {
+            e.printStackTrace();
             return null;
         } catch (InvocationTargetException e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -144,9 +146,9 @@ public class ThreadTagProvider {
     public static void main(String[] args) throws IOException {
         final long[] ratios = new long[20];
         final long[] sleepInTags = new long[20];
-        Arrays.fill (ratios, 1000000);
+        Arrays.fill (ratios, 500000);
         Arrays.fill (sleepInTags, 5);
-        final long[] sleeps = {500};
+        final long[] sleeps = {5};
         final boolean[] enableTag = new boolean[1];
         enableTag[0] = true;
 
@@ -169,8 +171,10 @@ public class ThreadTagProvider {
                 while (true) {
                     int i = r.nextInt(ratios.length);
                     if (tagEnabled) {
-                        String tag = "Tag-" + String.valueOf(i);
-                        ThreadTagProvider.instance().setTag(tag);
+                        if (i > 0) {
+                            String tag = "Tag-" + String.valueOf(i);
+                            ThreadTagProvider.instance().setTag(tag);
+                        }
                     }
                     //long l1 = System.currentTimeMillis();
                     double test = 0;
@@ -186,14 +190,16 @@ public class ThreadTagProvider {
                         //
                     }
                     if (tagEnabled) {
-                        ThreadTagProvider.instance().unsetTag();
+                        if (i>0) {
+                            ThreadTagProvider.instance().unsetTag();
+                        }
                     }
                     tagEnabled = enableTag[0];
-                    try {
+                    /*try {
                         Thread.sleep(sleeps[0]);
                     } catch (InterruptedException e) {
                         //
-                    }
+                    }*/
                 }
             }
         }
@@ -207,7 +213,7 @@ public class ThreadTagProvider {
 
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
-        /*while (true) {
+        while (true) {
 
             System.out.println("Current dummy loop counts:");
             for (int i = 0; i < ratios.length; i++) {
@@ -248,9 +254,9 @@ public class ThreadTagProvider {
             } else if (input.equals("3")) {
                 enableTag[0] = !enableTag[0];
             }
-        }*/
+        }
 
-        for (int i = 0; i < 60; i++) {
+        /*for (int i = 0; i < 60; i++) {
             TagExecRecordsPerThread[] recordsPerThreads = ThreadTagProvider.instance()
                     .getAllThreadTagExecRecords();
             for (TagExecRecordsPerThread recordOfThread : recordsPerThreads) {
@@ -271,6 +277,6 @@ public class ThreadTagProvider {
             } catch (InterruptedException e) {
                 //
             }
-        }
+        }*/
     }
 }

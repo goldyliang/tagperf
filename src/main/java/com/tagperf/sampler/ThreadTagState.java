@@ -3,7 +3,7 @@ package com.tagperf.sampler;
 import java.io.Serializable;
 
 /**
- * Created by elnggng on 3/6/18.
+ * Created by goldyliang on 3/6/18.
  */
 public class ThreadTagState implements Serializable {
     private long threadId;

@@ -5,7 +5,7 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 
 /**
- * Created by elnggng on 3/6/18.
+ * Created by goldyliang on 3/6/18.
  */
 public class ThreadTag implements ThreadTagMBean {
     public static final String MXBEAN_NAME = "com.tagperf.sampler:type=ThreadTag";
