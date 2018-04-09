@@ -1,9 +1,12 @@
 package com.tagperf.sampler;
 
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by goldyliang on 4/1/18.
@@ -14,33 +17,56 @@ public class TagExecRecordsPerThread implements Serializable {
 
     private long threadId;
 
-    public TagExecRecordsPerThread deepCloneAndReset() {
-        synchronized (this) {
-            TagExecRecordsPerThread newRecPerThread = new TagExecRecordsPerThread(threadId);
-            newRecPerThread.currentTag = currentTag;
-            newRecPerThread.execRecords = new HashMap<String, TagExecRecord>();
+    private long lastSampledThreadCpuTime;
+    private long threadCpuTimeSinceLastSample;
 
-            for (String tag : execRecords.keySet()) {
-                TagExecRecord rec = execRecords.get(tag);
-                newRecPerThread.execRecords.put (tag, rec.clone());
-                rec.reset();
-            }
-            return newRecPerThread;
+    private transient ThreadMXBean threadMBean;
+
+    public TagExecRecordsPerThread deepCloneAndReset() {
+        TagExecRecordsPerThread newRecPerThread = new TagExecRecordsPerThread(threadId);
+        newRecPerThread.currentTag = currentTag;
+        long threadCpuTime = getThreadCpuTime(threadId);
+        newRecPerThread.threadCpuTimeSinceLastSample = threadCpuTime - lastSampledThreadCpuTime;
+        newRecPerThread.execRecords = new HashMap<String, TagExecRecord>();
+
+        for (String tag : execRecords.keySet()) {
+            TagExecRecord rec = execRecords.get(tag);
+            newRecPerThread.execRecords.put (tag, rec.clone());
+            rec.reset();
         }
+        this.threadCpuTimeSinceLastSample = 0;
+        this.lastSampledThreadCpuTime = threadCpuTime;
+        return newRecPerThread;
+    }
+
+    private long getCurrentThreadCpuTime () {
+        return threadMBean.getThreadCpuTime(Thread.currentThread().getId());
+    }
+
+    private long getThreadCpuTime(long threadId) {
+        return threadMBean.getThreadCpuTime(threadId);
     }
 
     public TagExecRecordsPerThread() {
-        execRecords = new HashMap<String, TagExecRecord>();
+        execRecords = new ConcurrentHashMap<String, TagExecRecord>();
+        threadMBean = ManagementFactory.getThreadMXBean();
+        lastSampledThreadCpuTime = getThreadCpuTime(threadId);
     }
 
 
     public TagExecRecordsPerThread(long threadId) {
         execRecords = new HashMap<String, TagExecRecord>();
         this.threadId = threadId;
+        threadMBean = ManagementFactory.getThreadMXBean();
+        lastSampledThreadCpuTime = getThreadCpuTime(threadId);
     }
 
     public long getThreadId() {
         return threadId;
+    }
+
+    public long getThreadCpuTimeSinceLastSample() {
+        return threadCpuTimeSinceLastSample;
     }
 
 /*    public void setThreadId(long threadId) {
@@ -53,8 +79,9 @@ public class TagExecRecordsPerThread implements Serializable {
 
     public void addTagEnter (String tag) {
         synchronized (this) {
+            long currentThreadCpuTime = getCurrentThreadCpuTime();
             if (currentTag != null) {
-                addTagExit();
+                execRecords.get(currentTag).addTagExit(currentThreadCpuTime);
             }
 
             currentTag = tag;
@@ -63,15 +90,17 @@ public class TagExecRecordsPerThread implements Serializable {
                 record = new TagExecRecord(tag);
                 execRecords.put(tag, record);
             }
-            record.addTagEnter();
+            record.addTagEnter(currentThreadCpuTime);
         }
     }
 
     public void addTagExit () {
         synchronized (this) {
             if (currentTag != null) {
-                execRecords.get(currentTag).addTagExit();
+                execRecords.get(currentTag).addTagExit(getCurrentThreadCpuTime());
                 currentTag = null;
+                addTagEnter("<null>");
+                //currentTag = null;
             }
         }
     }
@@ -79,7 +108,7 @@ public class TagExecRecordsPerThread implements Serializable {
     public void addTagSample () {
         synchronized (this) {
             if (currentTag != null)
-                execRecords.get(currentTag).addSample(threadId);
+                execRecords.get(currentTag).addSample(threadId, getThreadCpuTime(threadId));
         }
     }
 

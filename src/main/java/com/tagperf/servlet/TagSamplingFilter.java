@@ -12,8 +12,10 @@ import com.tagperf.sampler.ThreadTag;
  */
 public class TagSamplingFilter implements Filter {
     boolean inited;
-    //Pattern dynamicRegexPattern;
+    Pattern dynamicRegexPattern;
     String dynamicRegex;
+    ThreadTagProvider threadTagProvider = ThreadTagProvider.instance();
+
     public void init(FilterConfig filterConfig) throws ServletException {
         try {
             ThreadTag.registerMBean();
@@ -23,32 +25,41 @@ public class TagSamplingFilter implements Filter {
         }
 
         dynamicRegex = filterConfig.getInitParameter("DynamicPartRegex");
-        //dynamicRegexPattern = Pattern.compile(dynamicRegex);
+        dynamicRegexPattern = Pattern.compile(dynamicRegex);
     }
 
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        if (!threadTagProvider.isTaggingEnabled()) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
+
         if (!inited) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
 
         if (servletRequest instanceof HttpServletRequest) {
-            String url = ((HttpServletRequest)servletRequest).getRequestURL().toString();
+            HttpServletRequest req = (HttpServletRequest)servletRequest;
+            String uri = req.getRequestURI();
 
             //String tag = dynamicRegexPattern.matcher(url).replaceAll("*");
-            String tag = url;
             if (dynamicRegex != null) {
-                tag = tag.replaceAll(dynamicRegex, "*");
+                uri = dynamicRegexPattern.matcher(uri).replaceAll("*");
+                //tag = tag.replaceAll(dynamicRegex, "*");
             }
+            StringBuilder builder = new StringBuilder();
+            builder.append(req.getMethod());
+            builder.append(" ");
+            builder.append(uri);
+            String tag = builder.toString();
 
-            System.out.println ("Tag: " + tag);
+            //System.out.println ("Tag: " + tag);
 
             ThreadTagProvider.instance().setTag(tag);
             filterChain.doFilter(servletRequest, servletResponse);
             ThreadTagProvider.instance().unsetTag();
         }
-
-
     }
 
     public void destroy() {

@@ -27,8 +27,6 @@ public class TagExecRecord implements Serializable, Cloneable {
         cpuTimeUsed = 0;
         //cpuTimeUsedEver_Prev = cpuTimeUsedEver = 0;
         tagEnteredCnt = tagExitCnt = 0;
-
-        threadMBean = ManagementFactory.getThreadMXBean();
     }
 
     public TagExecRecord clone() {
@@ -67,23 +65,15 @@ public class TagExecRecord implements Serializable, Cloneable {
         }
     }
 
-    private long getCurrentThreadCpuTime () {
-        return threadMBean.getThreadCpuTime(Thread.currentThread().getId());
-    }
-
-    private long getThreadCpuTime(long threadId) {
-        return threadMBean.getThreadCpuTime(threadId);
-    }
-
-    public void addTagEnter () {
+    public void addTagEnter (long currentThreadCpuTime) {
         curTagOngoing = true;
-        curStartedThreadTime = getCurrentThreadCpuTime();
+        curStartedThreadTime = currentThreadCpuTime;
         tagEnteredCnt++;
     }
 
-    public void addTagExit () {
+    public void addTagExit (long currentThreadCpuTime) {
         if (curTagOngoing) {
-            cpuTimeUsed += (getCurrentThreadCpuTime() - curStartedThreadTime);
+            cpuTimeUsed += (currentThreadCpuTime - curStartedThreadTime);
             //cpuTimeUsed = cpuTimeUsedEver - cpuTimeUsedEver_Prev;
             //cpuTimeUsedEver_Prev = cpuTimeUsedEver;
             tagExitCnt++;
@@ -95,9 +85,9 @@ public class TagExecRecord implements Serializable, Cloneable {
     }
 
     // This is not called within the same thread who set the tags
-    public void addSample (long thread) {
+    public void addSample (long thread, long threadCpuTime) {
         if (curTagOngoing) {
-            long cpuTime = getThreadCpuTime(thread);
+            long cpuTime = threadCpuTime;
 
             cpuTimeUsed += cpuTime - curStartedThreadTime;
 

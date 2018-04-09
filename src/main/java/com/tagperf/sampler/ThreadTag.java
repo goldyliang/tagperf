@@ -10,17 +10,23 @@ import java.lang.management.ManagementFactory;
 public class ThreadTag implements ThreadTagMBean {
     public static final String MXBEAN_NAME = "com.tagperf.sampler:type=ThreadTag";
 
-    public void enableTag() {
+    private ThreadTagProvider threadTagProvider = ThreadTagProvider.instance();
 
+    public void enableTagging() {
+        threadTagProvider.enableTagging();
     }
 
-    public void disableTag() {
+    public void disableTagging() {
+        threadTagProvider.disableTagging();
+    }
 
+    public boolean isTaggingEnabled() {
+        return threadTagProvider.isTaggingEnabled();
     }
 
     public TagExecRecordsPerThread [] getAllThreadTagExecRecords() {
         //System.out.println ("Getting thread state.");
-        return ThreadTagProvider.instance().getAllThreadTagExecRecords();
+        return threadTagProvider.getAllThreadTagExecRecords();
     }
 
     public static void registerMBean() throws Exception{
