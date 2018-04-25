@@ -13,16 +13,23 @@ public class TestSUT {
         return Long.valueOf(input);
     }
 
+    private static double readDouble (BufferedReader br) throws IOException {
+        String input = br.readLine();
+        return Double.valueOf(input);
+    }
+
     public static void main(String[] args) throws IOException {
         long initLoopCounts = 500000L;
         long initSleepInTags = 5;
+        final double [] throughputPerThread = {10.0}; // 10.0 request per second
         final boolean[] enableTag = new boolean[1];
 
         enableTag[0] = true;
 
         if (args.length >= 2) {
             initLoopCounts = Long.parseLong(args[0]);
-            initSleepInTags = Long.parseLong(args[1]);
+            //initSleepInTags = Long.parseLong(args[1]);
+            throughputPerThread[0] = Double.parseDouble(args[1]);
         }
 
         if (args.length >= 3) {
@@ -51,6 +58,9 @@ public class TestSUT {
                 Random r = new Random();
                 //boolean tagEnabled = enableTag[0];
 
+                long startTime = System.currentTimeMillis();
+                long iterCount = 0;
+
                 while (true) {
                     int randome_tag = r.nextInt(loopCounts.length);
                     if (randome_tag > 0 && enableTag[0]) {
@@ -62,14 +72,25 @@ public class TestSUT {
                     for (int n=0;n<loopCounts[randome_tag];n++) {
                         test = test + Math.sin(n);
                     }
+
+                    iterCount ++;
                     //long l2 = System.currentTimeMillis();
                     //System.out.println (String.valueOf(l2-l1));
                     //System.out.println(tag + ":" + String.valueOf(test));
-                    try {
-                        Thread.sleep(sleepInTags[randome_tag]);
-                    } catch (InterruptedException e) {
-                        //
+
+                    // Determine the expect finish time for iterCount requests
+                    long expectEndTime = startTime + Math.round( ((double) iterCount) / throughputPerThread[0] * 1000.0);
+                    long sleepTime = expectEndTime - System.currentTimeMillis();
+                    if (sleepTime > 0) {
+                        try {
+                            Thread.sleep(sleepTime);
+                        } catch (InterruptedException e) {
+                            //
+                        }
+                    } else {
+                        System.out.println ("Throughput set too high");
                     }
+
                     if (randome_tag > 0 && enableTag[0]) {
                         ThreadTagProvider.instance().unsetTag();
                     }
@@ -100,15 +121,16 @@ public class TestSUT {
             }
             System.out.println();
 
-            System.out.println("Current sleep time:");
+            /*System.out.println("Current sleep time:");
             for (int i = 0; i < loopCounts.length; i++) {
                 System.out.print(sleepInTags[i]);
                 System.out.print(",");
-            }
+            }*/
+            System.out.println("Current throughput per thread:" + throughputPerThread[0] + " per second");
             System.out.println();
 
             System.out.println("1. Change dummy loop count within tag.");
-            System.out.println("2. Change sleep time within tag");
+            System.out.println("2. Change throughput");
             if (enableTag[0]) {
                 System.out.println("3. Disable tag");
             } else {
@@ -124,11 +146,8 @@ public class TestSUT {
                 long cnt = readInt (br);
                 loopCounts[num] = cnt;
             } else if (input.equals("2")) {
-                System.out.print ("Tag Num:");
-                int num = (int)readInt (br);
-                System.out.print ("Sleep time");
-                long tm = readInt (br);
-                sleepInTags[num] = tm;
+                System.out.print ("Throughput");
+                throughputPerThread[0] = readDouble(br);
             } else if (input.equals("3")) {
                 enableTag[0] = !enableTag[0];
             }
