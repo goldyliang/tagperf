@@ -24,6 +24,8 @@ public class TestSUT {
         final double [] throughputPerThread = {10.0}; // 10.0 request per second
         final boolean[] enableTag = new boolean[1];
 
+        final boolean[] resetThrougput = {true};
+
         enableTag[0] = true;
 
         if (args.length >= 2) {
@@ -62,6 +64,13 @@ public class TestSUT {
                 long iterCount = 0;
 
                 while (true) {
+
+                    if (resetThrougput[0]) {
+                        startTime = System.currentTimeMillis();
+                        iterCount = 0;
+                        resetThrougput[0] = false;
+                    }
+
                     int randome_tag = r.nextInt(loopCounts.length);
                     if (randome_tag > 0 && enableTag[0]) {
                         String tag = "Tag-" + String.valueOf(randome_tag);
@@ -151,6 +160,8 @@ public class TestSUT {
             } else if (input.equals("3")) {
                 enableTag[0] = !enableTag[0];
             }
+
+            resetThrougput[0] = true;
         }
 
         /*for (int i = 0; i < 60; i++) {
