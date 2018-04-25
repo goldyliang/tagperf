@@ -96,9 +96,9 @@ public class TestSUT {
                         } catch (InterruptedException e) {
                             //
                         }
-                    } else {
-                        System.out.println ("Throughput set too high");
-                    }
+                    } //else {
+                       // System.out.println ("Throughput set too high");
+                    //}
 
                     if (randome_tag > 0 && enableTag[0]) {
                         ThreadTagProvider.instance().unsetTag();
