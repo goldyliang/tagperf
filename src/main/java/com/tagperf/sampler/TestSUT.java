@@ -16,10 +16,17 @@ public class TestSUT {
     public static void main(String[] args) throws IOException {
         long initLoopCounts = 500000L;
         long initSleepInTags = 5;
+        final boolean[] enableTag = new boolean[1];
 
-        if (args.length == 2) {
+        enableTag[0] = true;
+
+        if (args.length >= 2) {
             initLoopCounts = Long.parseLong(args[0]);
             initSleepInTags = Long.parseLong(args[1]);
+        }
+
+        if (args.length >= 3) {
+            enableTag[0] = Boolean.parseBoolean(args[2]);
         }
 
         final long[] loopCounts = new long[20];
@@ -27,10 +34,6 @@ public class TestSUT {
         Arrays.fill (loopCounts, initLoopCounts);
         Arrays.fill (sleepInTags, initSleepInTags);
         //final long[] sleeps = {5};
-        final boolean[] enableTag = new boolean[1];
-        enableTag[0] = true;
-
-
 
         try {
             ThreadTag.registerMBean();
@@ -50,7 +53,7 @@ public class TestSUT {
 
                 while (true) {
                     int randome_tag = r.nextInt(loopCounts.length);
-                    if (randome_tag > 0) {
+                    if (randome_tag > 0 && enableTag[0]) {
                         String tag = "Tag-" + String.valueOf(randome_tag);
                         ThreadTagProvider.instance().setTag(tag);
                     }
@@ -67,7 +70,7 @@ public class TestSUT {
                     } catch (InterruptedException e) {
                         //
                     }
-                    if (randome_tag>0) {
+                    if (randome_tag > 0 && enableTag[0]) {
                         ThreadTagProvider.instance().unsetTag();
                     }
                     /*try {
