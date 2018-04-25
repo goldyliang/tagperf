@@ -14,13 +14,23 @@ public class TestSUT {
     }
 
     public static void main(String[] args) throws IOException {
-        final long[] ratios = new long[20];
+        long initLoopCounts = 500000L;
+        long initSleepInTags = 5;
+
+        if (args.length == 2) {
+            initLoopCounts = Long.parseLong(args[0]);
+            initSleepInTags = Long.parseLong(args[1]);
+        }
+
+        final long[] loopCounts = new long[20];
         final long[] sleepInTags = new long[20];
-        Arrays.fill (ratios, 500000);
-        Arrays.fill (sleepInTags, 5);
-        final long[] sleeps = {5};
+        Arrays.fill (loopCounts, initLoopCounts);
+        Arrays.fill (sleepInTags, initSleepInTags);
+        //final long[] sleeps = {5};
         final boolean[] enableTag = new boolean[1];
         enableTag[0] = true;
+
+
 
         try {
             ThreadTag.registerMBean();
@@ -39,25 +49,25 @@ public class TestSUT {
                 //boolean tagEnabled = enableTag[0];
 
                 while (true) {
-                    int i = r.nextInt(ratios.length);
-                    if (i > 0) {
-                        String tag = "Tag-" + String.valueOf(i);
+                    int randome_tag = r.nextInt(loopCounts.length);
+                    if (randome_tag > 0) {
+                        String tag = "Tag-" + String.valueOf(randome_tag);
                         ThreadTagProvider.instance().setTag(tag);
                     }
                     //long l1 = System.currentTimeMillis();
                     double test = 0;
-                    for (int n=0;n<ratios[i];n++) {
+                    for (int n=0;n<loopCounts[randome_tag];n++) {
                         test = test + Math.sin(n);
                     }
                     //long l2 = System.currentTimeMillis();
                     //System.out.println (String.valueOf(l2-l1));
                     //System.out.println(tag + ":" + String.valueOf(test));
                     try {
-                        Thread.sleep(sleepInTags[i]);
+                        Thread.sleep(sleepInTags[randome_tag]);
                     } catch (InterruptedException e) {
                         //
                     }
-                    if (i>0) {
+                    if (randome_tag>0) {
                         ThreadTagProvider.instance().unsetTag();
                     }
                     /*try {
@@ -81,14 +91,14 @@ public class TestSUT {
         while (true) {
 
             System.out.println("Current dummy loop counts:");
-            for (int i = 0; i < ratios.length; i++) {
-                System.out.print(ratios[i]);
+            for (int i = 0; i < loopCounts.length; i++) {
+                System.out.print(loopCounts[i]);
                 System.out.print(",");
             }
             System.out.println();
 
             System.out.println("Current sleep time:");
-            for (int i = 0; i < ratios.length; i++) {
+            for (int i = 0; i < loopCounts.length; i++) {
                 System.out.print(sleepInTags[i]);
                 System.out.print(",");
             }
@@ -109,7 +119,7 @@ public class TestSUT {
                 int num = (int)readInt (br);
                 System.out.print ("Loop count");
                 long cnt = readInt (br);
-                ratios[num] = cnt;
+                loopCounts[num] = cnt;
             } else if (input.equals("2")) {
                 System.out.print ("Tag Num:");
                 int num = (int)readInt (br);
