@@ -77,9 +77,8 @@ public class TagExecRecordsPerThread implements Serializable {
         return execRecords.get(tag);
     }
 
-    public void addTagEnter (String tag) {
+    private void addTagEnter_internal (String tag, long currentThreadCpuTime) {
         synchronized (this) {
-            long currentThreadCpuTime = getCurrentThreadCpuTime();
             if (currentTag != null) {
                 execRecords.get(currentTag).addTagExit(currentThreadCpuTime);
             }
@@ -94,12 +93,19 @@ public class TagExecRecordsPerThread implements Serializable {
         }
     }
 
+    public void addTagEnter (String tag) {
+        long currentThreadCpuTime = getCurrentThreadCpuTime();
+        addTagEnter_internal (tag, currentThreadCpuTime);
+    }
+
     public void addTagExit () {
         synchronized (this) {
             if (currentTag != null) {
-                execRecords.get(currentTag).addTagExit(getCurrentThreadCpuTime());
+                long currentThreadCpuTime = getCurrentThreadCpuTime();
+
+                execRecords.get(currentTag).addTagExit(currentThreadCpuTime);
                 currentTag = null;
-                addTagEnter("<null>");
+                addTagEnter_internal("<null>", currentThreadCpuTime);
                 //currentTag = null;
             }
         }
